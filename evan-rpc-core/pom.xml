@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.evan</groupId>
-  <artifactId>example-consumer</artifactId>
+  <artifactId>evan-rpc-core</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>example-consumer</name>
+  <name>evan-rpc-core</name>
   <url>http://maven.apache.org</url>
 
   <properties>
@@ -32,15 +32,14 @@
       <version>1.18.30</version>
     </dependency>
     <dependency>
-      <groupId>com.evan</groupId>
-      <artifactId>example-common</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+      <version>4.5.1</version>
     </dependency>
     <dependency>
-      <groupId>com.evan</groupId>
-      <artifactId>evan-rpc-core</artifactId>
-      <version>1.0-SNAPSHOT</version>
-      <scope>compile</scope>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.4.14</version>
     </dependency>
   </dependencies>
 </project>
