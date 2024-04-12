@@ -23,4 +23,9 @@ public class RpcConfig {
      * 版本号
      */
     private String version = "1.0";
+
+    /**
+     * 模拟调用
+     */
+    private boolean mock = false;
 }
