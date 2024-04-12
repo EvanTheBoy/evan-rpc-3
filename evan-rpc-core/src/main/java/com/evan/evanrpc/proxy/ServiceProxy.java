@@ -2,6 +2,7 @@ package com.evan.evanrpc.proxy;
 
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
+import com.evan.evanrpc.RpcApplication;
 import com.evan.evanrpc.model.RpcRequest;
 import com.evan.evanrpc.model.RpcResponse;
 import com.evan.evanrpc.serializer.JdkSerializer;
@@ -28,7 +29,9 @@ public class ServiceProxy implements InvocationHandler {
             // 序列化
             byte[] bodyBytes = serializer.serialize(rpcRequest);
             // 发送请求
-            try (HttpResponse httpResponse = HttpRequest.post("http://localhost:8080")
+            String host = RpcApplication.getRpcConfig().getServerHost();
+            Integer serverPort = RpcApplication.getRpcConfig().getServerPort();
+            try (HttpResponse httpResponse = HttpRequest.post("http://" + host + ":" + serverPort)
                     .body(bodyBytes)
                     .execute()) {
                 byte[] result = httpResponse.bodyBytes();
