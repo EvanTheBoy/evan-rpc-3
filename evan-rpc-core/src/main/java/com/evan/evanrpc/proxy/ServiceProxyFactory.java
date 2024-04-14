@@ -1,23 +1,14 @@
 package com.evan.evanrpc.proxy;
 
 import com.evan.evanrpc.RpcApplication;
-
-import java.lang.reflect.Proxy;
+import com.evan.evanrpc.proxy.mock.MockServiceProxyFactory;
+import com.evan.evanrpc.proxy.normal.NormalServiceProxyFactory;
 
 public class ServiceProxyFactory {
-    public static <T> T getProxy(Class<T> serviceClass) {
+    public static <T> T getProxy(Class<T> clazz) {
         if (RpcApplication.getRpcConfig().isMock()) {
-            return (T) Proxy.newProxyInstance(
-                    serviceClass.getClassLoader(),
-                    new Class[]{serviceClass},
-                    new MockServiceProxy()
-            );
+            return MockServiceProxyFactory.getMockProxy(clazz);
         }
-
-        return (T) Proxy.newProxyInstance(
-                serviceClass.getClassLoader(),
-                new Class[]{serviceClass},
-                new ServiceProxy()
-        );
+        return NormalServiceProxyFactory.getProxy(clazz);
     }
 }

@@ -1,4 +1,4 @@
-package com.evan.evanrpc.proxy;
+package com.evan.evanrpc.proxy.normal;
 
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
-public class ServiceProxy implements InvocationHandler {
+public class NormalServiceProxy implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         // 指定序列化器
