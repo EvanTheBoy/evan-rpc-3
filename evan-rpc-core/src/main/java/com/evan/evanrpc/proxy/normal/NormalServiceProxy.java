@@ -7,6 +7,7 @@ import com.evan.evanrpc.model.RpcRequest;
 import com.evan.evanrpc.model.RpcResponse;
 import com.evan.evanrpc.serializer.JdkSerializer;
 import com.evan.evanrpc.serializer.Serializer;
+import com.evan.evanrpc.serializer.SerializerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
@@ -16,7 +17,7 @@ public class NormalServiceProxy implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         // 指定序列化器
-        Serializer serializer = new JdkSerializer();
+        final Serializer serializer = SerializerFactory.getInstance(RpcApplication.getRpcConfig().getSerializer());
 
         // 构造请求
         RpcRequest rpcRequest = RpcRequest.builder()
