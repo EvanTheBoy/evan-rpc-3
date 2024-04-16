@@ -4,7 +4,6 @@ import com.evan.evanrpc.RpcApplication;
 import com.evan.evanrpc.model.RpcRequest;
 import com.evan.evanrpc.model.RpcResponse;
 import com.evan.evanrpc.registry.LocalRegistry;
-import com.evan.evanrpc.serializer.JdkSerializer;
 import com.evan.evanrpc.serializer.Serializer;
 import com.evan.evanrpc.serializer.SerializerFactory;
 import io.vertx.core.Handler;
