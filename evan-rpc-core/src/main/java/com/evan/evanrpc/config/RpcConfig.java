@@ -1,5 +1,6 @@
 package com.evan.evanrpc.config;
 
+import com.evan.evanrpc.serializer.SerializerKeys;
 import lombok.Data;
 
 @Data
@@ -28,4 +29,9 @@ public class RpcConfig {
      * 模拟调用
      */
     private boolean mock = false;
+
+    /**
+     * 序列化器
+     */
+    private String serializer = SerializerKeys.JDK;
 }

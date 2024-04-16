@@ -1,0 +1,2 @@
+json=com.evan.evanrpc.serializer.JsonSerializer
+kryo=com.evan.evanrpc.serializer.KryoSerializer

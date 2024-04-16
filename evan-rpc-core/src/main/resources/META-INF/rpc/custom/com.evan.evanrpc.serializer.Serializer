@@ -1,0 +1,2 @@
+jdk=com.evan.evanrpc.serializer.JdkSerializer
+hessian=com.evan.evanrpc.serializer.HessianSerializer
