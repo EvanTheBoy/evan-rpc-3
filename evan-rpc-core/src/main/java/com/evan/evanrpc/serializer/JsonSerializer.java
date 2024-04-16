@@ -3,15 +3,16 @@ package com.evan.evanrpc.serializer;
 import com.evan.evanrpc.model.RpcRequest;
 import com.evan.evanrpc.model.RpcResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.IOException;
 
+
 public class JsonSerializer implements Serializer {
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
-    public <T> byte[] serialize(T object) throws IOException {
-        return OBJECT_MAPPER.writeValueAsBytes(object);
+    public <T> byte[] serialize(T obj) throws IOException {
+        return OBJECT_MAPPER.writeValueAsBytes(obj);
     }
 
     @Override
@@ -26,6 +27,14 @@ public class JsonSerializer implements Serializer {
         return obj;
     }
 
+    /**
+     * 由于 Object 的原始对象会被擦除，导致反序列化时会被作为 LinkedHashMap 无法转换成原始对象，因此这里做了特殊处理
+     *
+     * @param rpcRequest rpc 请求
+     * @param type       类型
+     * @return {@link T}
+     * @throws IOException IO异常
+     */
     private <T> T handleRequest(RpcRequest rpcRequest, Class<T> type) throws IOException {
         Class<?>[] parameterTypes = rpcRequest.getParameterTypes();
         Object[] args = rpcRequest.getArgs();
@@ -42,6 +51,14 @@ public class JsonSerializer implements Serializer {
         return type.cast(rpcRequest);
     }
 
+    /**
+     * 由于 Object 的原始对象会被擦除，导致反序列化时会被作为 LinkedHashMap 无法转换成原始对象，因此这里做了特殊处理
+     *
+     * @param rpcResponse rpc 响应
+     * @param type        类型
+     * @return {@link T}
+     * @throws IOException IO异常
+     */
     private <T> T handleResponse(RpcResponse rpcResponse, Class<T> type) throws IOException {
         // 处理响应数据
         byte[] dataBytes = OBJECT_MAPPER.writeValueAsBytes(rpcResponse.getData());
