@@ -28,7 +28,6 @@ public class ProviderExample {
         serviceMetaInfo.setServiceName(serviceName);
         serviceMetaInfo.setServiceHost(rpcConfig.getServerHost());
         serviceMetaInfo.setServicePort(rpcConfig.getServerPort());
-        System.out.println("serviceMetaInfo 的 HTTP 请求地址是: " +serviceMetaInfo.getServiceAddress());
         try {
             registry.register(serviceMetaInfo);
         } catch (Exception e) {
