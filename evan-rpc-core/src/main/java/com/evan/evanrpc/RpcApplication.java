@@ -1,7 +1,10 @@
 package com.evan.evanrpc;
 
+import com.evan.evanrpc.config.RegistryConfig;
 import com.evan.evanrpc.config.RpcConfig;
 import com.evan.evanrpc.constant.RpcConstant;
+import com.evan.evanrpc.registry.Registry;
+import com.evan.evanrpc.registry.RegistryFactory;
 import com.evan.evanrpc.utils.ConfigUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,6 +19,12 @@ public class RpcApplication {
     public static void init(RpcConfig newRpcConfig) {
         rpcConfig = newRpcConfig;
         log.info("rpc init, config = {}", newRpcConfig.toString());
+
+        // 注册中心初始化
+        RegistryConfig registryConfig = rpcConfig.getRegistryConfig();
+        Registry registry = RegistryFactory.getInstance(registryConfig.getRegistry());
+        registry.init(registryConfig);
+        log.info("rpc init, registry = {}", registryConfig);
     }
 
     /**
