@@ -26,9 +26,8 @@ public class ProviderExample {
         Registry registry = RegistryFactory.getInstance(registryConfig.getRegistry());
         ServiceMetaInfo serviceMetaInfo = new ServiceMetaInfo();
         serviceMetaInfo.setServiceName(serviceName);
-        serviceMetaInfo.setServiceAddress(rpcConfig.getServerHost() + ":" + rpcConfig.getServerPort());
-        System.out.println("rpcConfig.getServerHost() = " + rpcConfig.getServerHost());
-        System.out.println("rpcConfig.getServerPort() = " + rpcConfig.getServerPort());
+        serviceMetaInfo.setServiceHost(rpcConfig.getServerHost());
+        serviceMetaInfo.setServicePort(rpcConfig.getServerPort());
         System.out.println("serviceMetaInfo 的 HTTP 请求地址是: " +serviceMetaInfo.getServiceAddress());
         try {
             registry.register(serviceMetaInfo);

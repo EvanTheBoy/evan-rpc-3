@@ -52,8 +52,6 @@ public class NormalServiceProxy implements InvocationHandler {
             ServiceMetaInfo selectedServiceMetaInfo = serviceMetaInfoList.get(0);
 
             // 发送请求
-            String host = RpcApplication.getRpcConfig().getServerHost();
-            Integer serverPort = RpcApplication.getRpcConfig().getServerPort();
             try (HttpResponse httpResponse = HttpRequest.post(selectedServiceMetaInfo.getServiceAddress())
                     .body(bodyBytes)
                     .execute()) {
