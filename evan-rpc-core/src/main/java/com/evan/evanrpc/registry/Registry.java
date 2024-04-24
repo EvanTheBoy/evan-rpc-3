@@ -35,4 +35,9 @@ public interface Registry {
      * 消费端
      */
     void destroy();
+
+    /**
+     * 心跳检测(服务端)
+     */
+    void heartBeat();
 }
