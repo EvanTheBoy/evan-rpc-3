@@ -7,6 +7,7 @@ import cn.hutool.json.JSONUtil;
 import com.evan.evanrpc.config.RegistryConfig;
 import com.evan.evanrpc.model.ServiceMetaInfo;
 import io.etcd.jetcd.*;
+import io.etcd.jetcd.kv.GetResponse;
 import io.etcd.jetcd.options.GetOption;
 import io.etcd.jetcd.options.PutOption;
 
@@ -26,6 +27,8 @@ public class EtcdRegistry implements Registry {
     private static final String ETCD_ROOT_PATH = "/rpc/";
 
     private final Set<String> localRegisterNodeKeySet = new HashSet<>();
+
+    private final RegistryServiceCache registryServiceCache = new RegistryServiceCache();
 
     @Override
     public void init(RegistryConfig registryConfig) {
@@ -68,6 +71,12 @@ public class EtcdRegistry implements Registry {
 
     @Override
     public List<ServiceMetaInfo> serviceDiscovery(String serviceKey) {
+        // 先从缓存中查找
+        List<ServiceMetaInfo> serviceMetaInfos = registryServiceCache.readCache();
+        if (serviceMetaInfos != null) {
+            return serviceMetaInfos;
+        }
+
         // 前缀搜索, 结尾一定要加 '/'
         String searchPrefix = ETCD_ROOT_PATH + serviceKey + "/";
 
@@ -80,10 +89,14 @@ public class EtcdRegistry implements Registry {
                     .get()
                     .getKvs();
             // 解析服务信息
-            return keyValues.stream().map(keyValue -> {
+            List<ServiceMetaInfo> serviceMetaInfoList = keyValues.stream().map(keyValue -> {
                 String value = keyValue.getValue().toString(StandardCharsets.UTF_8);
                 return JSONUtil.toBean(value, ServiceMetaInfo.class);
             }).collect(Collectors.toList());
+
+            // 写入缓存
+            registryServiceCache.writeCache(serviceMetaInfoList);
+            return serviceMetaInfoList;
         } catch (Exception e) {
             throw new RuntimeException("获取服务列表失败", e);
         }
@@ -92,6 +105,13 @@ public class EtcdRegistry implements Registry {
     @Override
     public void destroy() {
         System.out.println("当前节点下线");
+        for (String key : localRegisterNodeKeySet) {
+            try {
+                kvClient.delete(ByteSequence.from(key, StandardCharsets.UTF_8)).get();
+            } catch (Exception e) {
+                throw new RuntimeException("节点下线失败:" + e);
+            }
+        }
         if (kvClient != null) {
             kvClient.close();
         }
@@ -107,9 +127,11 @@ public class EtcdRegistry implements Registry {
             // 遍历本节点所有 key
             for (String key : localRegisterNodeKeySet) {
                 try {
-                    List<KeyValue> keyValues = kvClient.get(ByteSequence.from(key,StandardCharsets.UTF_8))
+                    List<KeyValue> keyValues = kvClient.get(ByteSequence.from(key, StandardCharsets.UTF_8))
                             .get()
                             .getKvs();
+                    // 节点过期, 需要重启节点才能重新注册
+                    // 这个也可当做节点异常被动下线的方案
                     if (CollUtil.isEmpty(keyValues)) {
                         continue;
                     }
