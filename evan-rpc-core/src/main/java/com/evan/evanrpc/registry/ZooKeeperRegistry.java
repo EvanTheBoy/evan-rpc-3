@@ -3,18 +3,24 @@ package com.evan.evanrpc.registry;
 import cn.hutool.core.collection.ConcurrentHashSet;
 import com.evan.evanrpc.config.RegistryConfig;
 import com.evan.evanrpc.model.ServiceMetaInfo;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.cache.CuratorCache;
+import org.apache.curator.framework.recipes.cache.CuratorCacheListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.x.discovery.ServiceDiscovery;
 import org.apache.curator.x.discovery.ServiceDiscoveryBuilder;
 import org.apache.curator.x.discovery.ServiceInstance;
 import org.apache.curator.x.discovery.details.JsonInstanceSerializer;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+@Slf4j
 public class ZooKeeperRegistry implements Registry {
 
     private CuratorFramework client;
@@ -66,22 +72,62 @@ public class ZooKeeperRegistry implements Registry {
     @Override
     public void register(ServiceMetaInfo serviceMetaInfo) throws Exception {
         serviceDiscovery.registerService(buildServiceInstance(serviceMetaInfo));
-        
+
+        // 添加到本地缓存
+        String registerKey = ZK_ROOT_PATH + "/" + serviceMetaInfo.getServiceNodeKey();
+        localRegisterNodeKeySet.add(registerKey);
     }
 
     @Override
     public void deregister(ServiceMetaInfo serviceMetaInfo) {
+        try {
+            serviceDiscovery.unregisterService(buildServiceInstance(serviceMetaInfo));
+        } catch (Exception e) {
+            throw new RuntimeException("节点下线失败" + e);
+        }
 
+        // 从缓存中清除
+        String registerKey = ZK_ROOT_PATH + "/" + serviceMetaInfo.getServiceNodeKey();
+        localRegisterNodeKeySet.remove(registerKey);
     }
 
     @Override
     public List<ServiceMetaInfo> serviceDiscovery(String serviceKey) {
-        return null;
+        // 优先从缓存中查找
+        List<ServiceMetaInfo> serviceMetaInfos = registryServiceCache.readCache();
+        if (serviceMetaInfos != null) {
+            return serviceMetaInfos;
+        }
+        try {
+            // 查询服务信息
+            Collection<ServiceInstance<ServiceMetaInfo>> serviceInstancesList = serviceDiscovery
+                    .queryForInstances(serviceKey);
+            // 解析服务信息
+            List<ServiceMetaInfo> serviceMetaInfoList = serviceInstancesList.stream()
+                    .map(ServiceInstance::getPayload)
+                    .collect(Collectors.toList());
+            // 写入缓存
+            registryServiceCache.writeCache(serviceMetaInfoList);
+            return serviceMetaInfoList;
+        } catch (Exception e) {
+            throw new RuntimeException("获取服务列表失败:" + e);
+        }
     }
 
     @Override
     public void destroy() {
-
+        log.info("当前节点下线");
+        for (String key : localRegisterNodeKeySet) {
+            try {
+                client.delete().guaranteed().forPath(key);
+            } catch (Exception e) {
+                throw new RuntimeException(key + "节点下线失败");
+            }
+        }
+        // 释放资源
+        if (client != null) {
+            client.close();
+        }
     }
 
     @Override
@@ -91,7 +137,19 @@ public class ZooKeeperRegistry implements Registry {
 
     @Override
     public void watch(String serviceNodeKey) {
-
+        String watchKey = ZK_ROOT_PATH + "/" + serviceNodeKey;
+        boolean newWatch = watchingKeySet.add(watchKey);
+        if (newWatch) {
+            CuratorCache curatorCache = CuratorCache.build(client, watchKey);
+            curatorCache.start();
+            curatorCache.listenable().addListener(
+                    CuratorCacheListener
+                            .builder()
+                            .forDeletes(childData -> registryServiceCache.clearCache())
+                            .forChanges(((oldNode, node) -> registryServiceCache.clearCache()))
+                            .build()
+            );
+        }
     }
 
     private ServiceInstance<ServiceMetaInfo> buildServiceInstance(ServiceMetaInfo serviceMetaInfo) {
