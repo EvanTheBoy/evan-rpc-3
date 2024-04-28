@@ -31,7 +31,7 @@ public class ProtocolMessageEncoder {
         buffer.appendLong(header.getRequestId());
         // 获取序列化器
         ProtocolMessageSerializerEnum serializerEnum = ProtocolMessageSerializerEnum.getEnumByKey(header.getSerializer());
-        if (serializerEnum != null) {
+        if (serializerEnum == null) {
             throw new RuntimeException("序列化协议不存在");
         }
         Serializer serializer = SerializerFactory.getInstance(serializerEnum.getValue());
