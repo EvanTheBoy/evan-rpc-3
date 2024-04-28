@@ -1,5 +1,12 @@
 package com.evan.evanrpc.protocol;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class ProtocolMessage<T> {
     /**
      * 消息头
@@ -14,7 +21,8 @@ public class ProtocolMessage<T> {
     /**
      * 协议消息头
      */
-    private static class Header {
+    @Data
+    public static class Header {
         /**
          * 魔数, 保证安全性
          */
