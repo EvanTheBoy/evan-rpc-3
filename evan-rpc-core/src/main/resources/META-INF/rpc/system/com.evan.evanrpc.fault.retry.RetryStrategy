@@ -1,0 +1,2 @@
+no=com.evan.evanrpc.fault.retry.NoRetryStrategy
+fixedInterval=com.evan.evanrpc.fault.retry.FixedIntervalRetryStrategy

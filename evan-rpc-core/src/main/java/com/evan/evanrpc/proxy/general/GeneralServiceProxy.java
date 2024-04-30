@@ -5,6 +5,8 @@ import cn.hutool.core.util.IdUtil;
 import com.evan.evanrpc.RpcApplication;
 import com.evan.evanrpc.config.RpcConfig;
 import com.evan.evanrpc.constant.RpcConstant;
+import com.evan.evanrpc.fault.retry.RetryStrategy;
+import com.evan.evanrpc.fault.retry.RetryStrategyFactory;
 import com.evan.evanrpc.loadbalancer.LoadBalancer;
 import com.evan.evanrpc.loadbalancer.LoadBalancerFactory;
 import com.evan.evanrpc.model.RpcRequest;
@@ -61,7 +63,10 @@ public class GeneralServiceProxy implements InvocationHandler {
             requestParams.put("methodName", rpcRequest.getMethodName());
             ServiceMetaInfo selectedServiceMetaInfo = loadBalancer.select(requestParams, serviceMetaInfoList);
             // 发送 TCP 请求
-            RpcResponse rpcResponse = VertxTcpClient.doRequest(rpcRequest, selectedServiceMetaInfo);
+            // 使用重试机制
+            RetryStrategy retryStrategy = RetryStrategyFactory.getInstance(rpcConfig.getRetryStrategy());
+            RpcResponse rpcResponse = retryStrategy.doRetry(() -> VertxTcpClient
+                    .doRequest(rpcRequest, selectedServiceMetaInfo));
             return rpcResponse.getData();
         } catch (Exception e) {
             throw new RuntimeException("调用失败:" + e);
