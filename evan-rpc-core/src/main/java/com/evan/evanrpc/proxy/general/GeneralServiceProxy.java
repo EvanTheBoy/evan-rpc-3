@@ -5,6 +5,8 @@ import cn.hutool.core.util.IdUtil;
 import com.evan.evanrpc.RpcApplication;
 import com.evan.evanrpc.config.RpcConfig;
 import com.evan.evanrpc.constant.RpcConstant;
+import com.evan.evanrpc.loadbalancer.LoadBalancer;
+import com.evan.evanrpc.loadbalancer.LoadBalancerFactory;
 import com.evan.evanrpc.model.RpcRequest;
 import com.evan.evanrpc.model.RpcResponse;
 import com.evan.evanrpc.model.ServiceMetaInfo;
@@ -22,7 +24,9 @@ import io.vertx.core.net.NetSocket;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class GeneralServiceProxy implements InvocationHandler {
@@ -50,9 +54,13 @@ public class GeneralServiceProxy implements InvocationHandler {
             if (CollUtil.isEmpty(serviceMetaInfoList)) {
                 throw new RuntimeException("暂无服务地址");
             }
-            // 暂时先取第一个
-            ServiceMetaInfo selectedServiceMetaInfo = serviceMetaInfoList.get(0);
-            // TODO 发送 TCP 请求
+            // 调用负载均衡器选择服务
+            LoadBalancer loadBalancer = LoadBalancerFactory.getInstance(rpcConfig.getLoadBalancer());
+            // 将调用方法名(请求路径)作为负载均衡参数
+            Map<String, Object> requestParams = new HashMap<>();
+            requestParams.put("methodName", rpcRequest.getMethodName());
+            ServiceMetaInfo selectedServiceMetaInfo = loadBalancer.select(requestParams, serviceMetaInfoList);
+            // 发送 TCP 请求
             RpcResponse rpcResponse = VertxTcpClient.doRequest(rpcRequest, selectedServiceMetaInfo);
             return rpcResponse.getData();
         } catch (Exception e) {
