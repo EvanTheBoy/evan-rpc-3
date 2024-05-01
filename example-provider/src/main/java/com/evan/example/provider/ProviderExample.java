@@ -1,41 +1,24 @@
 package com.evan.example.provider;
 
-import com.evan.evanrpc.RpcApplication;
-import com.evan.evanrpc.config.RegistryConfig;
-import com.evan.evanrpc.config.RpcConfig;
-import com.evan.evanrpc.model.ServiceMetaInfo;
-import com.evan.evanrpc.registry.LocalRegistry;
-import com.evan.evanrpc.registry.Registry;
-import com.evan.evanrpc.registry.RegistryFactory;
-import com.evan.evanrpc.server.HttpServer;
-import com.evan.evanrpc.server.VertxHttpServer;
+import com.evan.evanrpc.bootstrap.ProviderBootstrap;
+import com.evan.evanrpc.model.ServiceRegisterInfo;
 import com.evan.example.common.service.UserService;
 
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * 服务提供者
+ */
 public class ProviderExample {
     public static void main(String[] args) {
-        // RPC 框架初始化
-        RpcApplication.init();
-
         // 注册服务
-        String serviceName = UserService.class.getName();
-        LocalRegistry.register(serviceName, UserServiceImpl.class);
+        List<ServiceRegisterInfo<?>> serviceRegisterInfoList = new ArrayList<>();
+        ServiceRegisterInfo<UserService> service = new ServiceRegisterInfo<>(UserService.class.getName(),
+                UserServiceImpl.class);
+        serviceRegisterInfoList.add(service);
 
-        // 注册服务到服务中心
-        RpcConfig rpcConfig = RpcApplication.getRpcConfig();
-        RegistryConfig registryConfig = rpcConfig.getRegistryConfig();
-        Registry registry = RegistryFactory.getInstance(registryConfig.getRegistry());
-        ServiceMetaInfo serviceMetaInfo = new ServiceMetaInfo();
-        serviceMetaInfo.setServiceName(serviceName);
-        serviceMetaInfo.setServiceHost(rpcConfig.getServerHost());
-        serviceMetaInfo.setServicePort(rpcConfig.getServerPort());
-        try {
-            registry.register(serviceMetaInfo);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        // 启动 web 服务
-        VertxHttpServer vertxHttpServer = new VertxHttpServer();
-        vertxHttpServer.doStart(8080);
+        // 初始化
+        ProviderBootstrap.init(serviceRegisterInfoList);
     }
 }
