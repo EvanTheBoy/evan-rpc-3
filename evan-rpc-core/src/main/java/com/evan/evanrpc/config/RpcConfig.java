@@ -4,6 +4,7 @@ import com.evan.evanrpc.fault.retry.RetryStrategyKeys;
 import com.evan.evanrpc.loadbalancer.LoadBalancer;
 import com.evan.evanrpc.loadbalancer.LoadBalancerKeys;
 import com.evan.evanrpc.serializer.SerializerKeys;
+import com.evan.evanrpc.tolerant.TolerantStrategyKeys;
 import lombok.Data;
 
 @Data
@@ -52,4 +53,9 @@ public class RpcConfig {
      * 重试策略
      */
     private String retryStrategy = RetryStrategyKeys.NO;
+
+    /**
+     * 容错策略
+     */
+    private String tolerantStrategy = TolerantStrategyKeys.FAIL_FAST;
 }

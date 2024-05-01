@@ -1,7 +1,6 @@
 package com.evan.evanrpc.proxy.general;
 
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.util.IdUtil;
 import com.evan.evanrpc.RpcApplication;
 import com.evan.evanrpc.config.RpcConfig;
 import com.evan.evanrpc.constant.RpcConstant;
@@ -12,24 +11,19 @@ import com.evan.evanrpc.loadbalancer.LoadBalancerFactory;
 import com.evan.evanrpc.model.RpcRequest;
 import com.evan.evanrpc.model.RpcResponse;
 import com.evan.evanrpc.model.ServiceMetaInfo;
-import com.evan.evanrpc.protocol.*;
 import com.evan.evanrpc.registry.Registry;
 import com.evan.evanrpc.registry.RegistryFactory;
 import com.evan.evanrpc.serializer.Serializer;
 import com.evan.evanrpc.serializer.SerializerFactory;
 import com.evan.evanrpc.server.tcp.VertxTcpClient;
-import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetSocket;
+import com.evan.evanrpc.tolerant.TolerantStrategy;
+import com.evan.evanrpc.tolerant.TolerantStrategyFactory;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 public class GeneralServiceProxy implements InvocationHandler {
     @Override
@@ -64,9 +58,16 @@ public class GeneralServiceProxy implements InvocationHandler {
             ServiceMetaInfo selectedServiceMetaInfo = loadBalancer.select(requestParams, serviceMetaInfoList);
             // 发送 TCP 请求
             // 使用重试机制
-            RetryStrategy retryStrategy = RetryStrategyFactory.getInstance(rpcConfig.getRetryStrategy());
-            RpcResponse rpcResponse = retryStrategy.doRetry(() -> VertxTcpClient
-                    .doRequest(rpcRequest, selectedServiceMetaInfo));
+            RpcResponse rpcResponse;
+            try {
+                RetryStrategy retryStrategy = RetryStrategyFactory.getInstance(rpcConfig.getRetryStrategy());
+                rpcResponse = retryStrategy.doRetry(() -> VertxTcpClient
+                        .doRequest(rpcRequest, selectedServiceMetaInfo));
+            } catch (Exception e) {
+                // 容错机制
+                TolerantStrategy tolerantStrategy = TolerantStrategyFactory.getInstance(rpcConfig.getTolerantStrategy());
+                rpcResponse = tolerantStrategy.doTolerant(null, e);
+            }
             return rpcResponse.getData();
         } catch (Exception e) {
             throw new RuntimeException("调用失败:" + e);

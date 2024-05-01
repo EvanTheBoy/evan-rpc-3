@@ -1,0 +1,2 @@
+failSafe=com.evan.evanrpc.tolerant.FailSafeTolerantStrategy
+failFast=com.evan.evanrpc.tolerant.FailFastTolerantStrategy
